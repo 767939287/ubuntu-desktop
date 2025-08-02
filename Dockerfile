@@ -6,6 +6,34 @@ USER root
 
 # 替换阿里云系统源
 COPY $PWD/sources.list /etc/apt/sources.list
+
+ENV NEO_VERSION=24.39.31294.12
+ENV GMMLIB_VERSION=22.5.2
+ENV IGC_VERSION=1.0.17791.9
+ENV LEVEL_ZERO_VERSION=1.6.31294.12
+
+RUN apt update && \
+    apt install -y --no-install-recommends --no-install-suggests iproute2 openssl locales fonts-noto-cjk fonts-noto-cjk-extra && \
+# install intel driver
+    mkdir intel-compute-runtime && \
+    cd intel-compute-runtime && \
+    wget https://github.com/intel/compute-runtime/releases/download/${NEO_VERSION}/libigdgmm12_${GMMLIB_VERSION}_amd64.deb && \
+    wget https://github.com/intel/intel-graphics-compiler/releases/download/igc-${IGC_VERSION}/intel-igc-core_${IGC_VERSION}_amd64.deb  && \
+    wget https://github.com/intel/intel-graphics-compiler/releases/download/igc-${IGC_VERSION}/intel-igc-opencl_${IGC_VERSION}_amd64.deb  && \
+    wget https://github.com/intel/compute-runtime/releases/download/${NEO_VERSION}/intel-opencl-icd_${NEO_VERSION}_amd64.deb  && \
+    wget https://github.com/intel/compute-runtime/releases/download/${NEO_VERSION}/intel-level-zero-gpu_${LEVEL_ZERO_VERSION}_amd64.deb  && \
+    apt-get install --no-install-recommends --no-install-suggests -y ./*.deb  && \
+    cd ..  && \
+# clean up
+    rm -rf intel-compute-runtime  && \
+    apt-get remove gnupg wget apt-transport-https -y  && \
+    apt-get clean autoclean -y  && \
+    apt-get autoremove -y  && \
+    rm -rf /tmp/* /var/lib/apt/lists/* /var/tmp/* && \
+    mkdir -p /cache /config /media && \
+    chmod 777 /cache /config /media && \
+    sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && locale-gen
+
 # COPY $PWD/xunlei_1.0.0.1-myubuntu_amd64.deb /home/kasm-user
 RUN apt update && mkdir -p /home/kasm-user/Desktop \
 
