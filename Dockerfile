@@ -26,16 +26,8 @@ RUN apt update && \
     cd ..  && \
 # clean up
     rm -rf intel-compute-runtime  && \
-    apt-get remove gnupg wget apt-transport-https -y  && \
-    apt-get clean autoclean -y  && \
-    apt-get autoremove -y  && \
-    rm -rf /tmp/* /var/lib/apt/lists/* /var/tmp/* && \
-    mkdir -p /cache /config /media && \
-    chmod 777 /cache /config /media && \
-    sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && locale-gen
-
-# COPY $PWD/xunlei_1.0.0.1-myubuntu_amd64.deb /home/kasm-user
-RUN apt update && mkdir -p /home/kasm-user/Desktop \
+    sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && locale-gen && \
+    && mkdir -p /home/kasm-user/Desktop \
 
 # Chrome
 && apt install -y xdg-utils fonts-liberation libu2f-udev \
@@ -69,5 +61,9 @@ RUN apt update && mkdir -p /home/kasm-user/Desktop \
 # && ln -s /usr/share/applications/code.desktop /home/kasm-user/Desktop/code.desktop \
 
 && apt autoremove -y \
-&& apt clean \
+&& apt clean && \
+    apt-get remove gnupg wget apt-transport-https -y  && \
+    apt-get clean autoclean -y  && \
+    apt-get autoremove -y  && \
+    rm -rf /tmp/* /var/lib/apt/lists/* /var/tmp/* && \
 && rm -rf *.deb
