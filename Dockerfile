@@ -17,28 +17,28 @@ RUN apt update && mkdir -p /home/kasm-user/Desktop \
 && ln -s /usr/share/applications/google-chrome.desktop /home/kasm-user/Desktop/google-chrome.desktop \
 
 # BaiduNetDisk
-&& wget https://issuepcdn.baidupcs.com/issue/netdisk/LinuxGuanjia/4.17.7/baidunetdisk_4.17.7_amd64.deb \
-&& dpkg -i baidunetdisk_4.17.7_amd64.deb \
-&& ln -s /usr/share/applications/baidunetdisk.desktop /home/kasm-user/Desktop/baidunetdisk.desktop \
+# && wget https://issuepcdn.baidupcs.com/issue/netdisk/LinuxGuanjia/4.17.7/baidunetdisk_4.17.7_amd64.deb \
+# && dpkg -i baidunetdisk_4.17.7_amd64.deb \
+# && ln -s /usr/share/applications/baidunetdisk.desktop /home/kasm-user/Desktop/baidunetdisk.desktop \
 
 # Thunder
-&& apt install -y libgtk2.0-0 libdbus-glib-1-2 \
-&& dpkg -i xunlei_1.0.0.1-myubuntu_amd64.deb \
-&& sed -i 's/Exec=\/opt\/thunder\/xunlei\/start.sh/Exec=\/opt\/thunder\/xunlei\/start.sh --no-sandbox/g' /usr/share/applications/xunlei.desktop \
-&& ln -s /usr/share/applications/xunlei.desktop /home/kasm-user/Desktop/xunlei.desktop \
+# && apt install -y libgtk2.0-0 libdbus-glib-1-2 \
+# && dpkg -i xunlei_1.0.0.1-myubuntu_amd64.deb \
+# && sed -i 's/Exec=\/opt\/thunder\/xunlei\/start.sh/Exec=\/opt\/thunder\/xunlei\/start.sh --no-sandbox/g' /usr/share/applications/xunlei.desktop \
+# && ln -s /usr/share/applications/xunlei.desktop /home/kasm-user/Desktop/xunlei.desktop \
 
 # qBittorrent
-&& add-apt-repository -y ppa:qbittorrent-team/qbittorrent-stable \
-&& apt update \
-&& apt install -y qbittorrent \
-&& ln -s /usr/share/applications/org.qbittorrent.qBittorrent.desktop /home/kasm-user/Desktop/org.qbittorrent.qBittorrent.desktop \
+# && add-apt-repository -y ppa:qbittorrent-team/qbittorrent-stable \
+# && apt update \
+# && apt install -y qbittorrent \
+# && ln -s /usr/share/applications/org.qbittorrent.qBittorrent.desktop /home/kasm-user/Desktop/org.qbittorrent.qBittorrent.desktop \
 
 # Visual Studio Code
-&& wget https://az764295.vo.msecnd.net/stable/1a5daa3a0231a0fbba4f14db7ec463cf99d7768e/code_1.84.2-1699528352_amd64.deb \
-&& dpkg -i code_1.84.2-1699528352_amd64.deb \
-&& sed -i 's/Exec=\/usr\/share\/code\/code/Exec=\/usr\/share\/code\/code --no-sandbox/g' /usr/share/applications/code.desktop \
-&& sed -i 's/Icon=com.visualstudio.code/Icon=\/usr\/share\/code\/resources\/app\/resources\/linux\/code.png/g' /usr/share/applications/code.desktop \
-&& ln -s /usr/share/applications/code.desktop /home/kasm-user/Desktop/code.desktop \
+# && wget https://az764295.vo.msecnd.net/stable/1a5daa3a0231a0fbba4f14db7ec463cf99d7768e/code_1.84.2-1699528352_amd64.deb \
+# && dpkg -i code_1.84.2-1699528352_amd64.deb \
+# && sed -i 's/Exec=\/usr\/share\/code\/code/Exec=\/usr\/share\/code\/code --no-sandbox/g' /usr/share/applications/code.desktop \
+# && sed -i 's/Icon=com.visualstudio.code/Icon=\/usr\/share\/code\/resources\/app\/resources\/linux\/code.png/g' /usr/share/applications/code.desktop \
+# && ln -s /usr/share/applications/code.desktop /home/kasm-user/Desktop/code.desktop \
 
 && apt autoremove -y \
 && apt clean \
