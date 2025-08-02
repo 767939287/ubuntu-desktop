@@ -66,4 +66,4 @@ RUN apt update && \
     apt-get clean autoclean -y  && \
     apt-get autoremove -y  && \
     rm -rf /tmp/* /var/lib/apt/lists/* /var/tmp/* && \
-&& rm -rf *.deb
+    rm -rf *.deb
