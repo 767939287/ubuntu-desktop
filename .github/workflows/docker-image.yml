@@ -25,4 +25,4 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          tags: colinchang/ubuntu-desktop:latest
+          tags: 767939287/ubuntu-desktop:latest

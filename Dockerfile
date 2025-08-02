@@ -1,4 +1,4 @@
-FROM kasmweb/core-ubuntu-jammy:1.13.0
+FROM kasmweb/core-ubuntu-jammy:1.17.0
 
 LABEL version="1.0" maintainer="colinchang<zhangcheng5468@gmail.com>"
 
