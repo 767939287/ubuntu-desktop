@@ -1,12 +1,12 @@
-FROM kasmweb/core-ubuntu-jammy:1.17.0
+FROM kasmweb/core-ubuntu-noble:1.17.0
 
-LABEL version="1.0" maintainer="colinchang<zhangcheng5468@gmail.com>"
+# LABEL version="1.0" maintainer="colinchang<zhangcheng5468@gmail.com>"
 
 USER root
 
 # 替换阿里云系统源
 COPY $PWD/sources.list /etc/apt/sources.list
-COPY $PWD/xunlei_1.0.0.1-myubuntu_amd64.deb /home/kasm-user
+# COPY $PWD/xunlei_1.0.0.1-myubuntu_amd64.deb /home/kasm-user
 RUN apt update && mkdir -p /home/kasm-user/Desktop \
 
 # Chrome
