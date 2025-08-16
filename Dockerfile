@@ -14,7 +14,8 @@ RUN apt update && mkdir -p /home/kasm-user/Desktop \
 
 # Chrome
 
-&& apt install -y --no-install-recommends --no-install-suggests iproute2 openssl locales fonts-noto-cjk fonts-noto-cjk-extra xdg-utils fonts-liberation libu2f-udev smbclient cifs-utils \
+&& apt install -y --no-install-recommends --no-install-suggests pip chromium-browser chromium-chromedriver iproute2 openssl locales fonts-noto-cjk fonts-noto-cjk-extra xdg-utils fonts-liberation libu2f-udev smbclient cifs-utils \
+&& pip install --no-cache-dir --upgrade DrissionPage
 && wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb \
 && wget https://github.com/intel/compute-runtime/releases/download/${NEO_VERSION}/libigdgmm12_${GMMLIB_VERSION}_amd64.deb \
 && wget https://github.com/intel/intel-graphics-compiler/releases/download/igc-${IGC_VERSION}/intel-igc-core_${IGC_VERSION}_amd64.deb \
