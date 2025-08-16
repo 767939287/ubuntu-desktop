@@ -25,7 +25,7 @@ RUN apt update && mkdir -p /home/kasm-user/Desktop \
 && apt-get install --no-install-recommends --no-install-suggests -y ./*.deb \
 && sed -i 's/Exec=\/usr\/bin\/google-chrome-stable/Exec=\/usr\/bin\/google-chrome-stable --no-sandbox/g' /usr/share/applications/google-chrome.desktop \
 && ln -s /usr/share/applications/google-chrome.desktop /home/kasm-user/Desktop/google-chrome.desktop \
-&& pip install --no-cache-dir DrissionPage \
+
 # BaiduNetDisk
 # && wget https://issuepcdn.baidupcs.com/issue/netdisk/LinuxGuanjia/4.17.7/baidunetdisk_4.17.7_amd64.deb \
 # && dpkg -i baidunetdisk_4.17.7_amd64.deb \
