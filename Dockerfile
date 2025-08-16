@@ -15,7 +15,6 @@ RUN apt update && mkdir -p /home/kasm-user/Desktop \
 # Chrome
 
 && apt install -y --no-install-recommends --no-install-suggests pip chromium-browser chromium-chromedriver iproute2 openssl locales fonts-noto-cjk fonts-noto-cjk-extra xdg-utils fonts-liberation libu2f-udev smbclient cifs-utils \
-&& pip install --no-cache-dir --upgrade DrissionPage \
 && wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb \
 && wget https://github.com/intel/compute-runtime/releases/download/${NEO_VERSION}/libigdgmm12_${GMMLIB_VERSION}_amd64.deb \
 && wget https://github.com/intel/intel-graphics-compiler/releases/download/igc-${IGC_VERSION}/intel-igc-core_${IGC_VERSION}_amd64.deb \
@@ -26,7 +25,7 @@ RUN apt update && mkdir -p /home/kasm-user/Desktop \
 && apt-get install --no-install-recommends --no-install-suggests -y ./*.deb \
 && sed -i 's/Exec=\/usr\/bin\/google-chrome-stable/Exec=\/usr\/bin\/google-chrome-stable --no-sandbox/g' /usr/share/applications/google-chrome.desktop \
 && ln -s /usr/share/applications/google-chrome.desktop /home/kasm-user/Desktop/google-chrome.desktop \
-
+&& pip install --no-cache-dir DrissionPage \
 # BaiduNetDisk
 # && wget https://issuepcdn.baidupcs.com/issue/netdisk/LinuxGuanjia/4.17.7/baidunetdisk_4.17.7_amd64.deb \
 # && dpkg -i baidunetdisk_4.17.7_amd64.deb \
