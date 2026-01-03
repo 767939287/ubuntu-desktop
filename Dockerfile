@@ -1,10 +1,16 @@
-FROM kasmweb/core-ubuntu-noble:1.17.0
+#FROM kasmweb/core-ubuntu-noble:1.17.0
+FROM kasmweb/core-ubuntu-noble:x86_64-develop
+
+
 
 # LABEL version="1.0" maintainer="colinchang<zhangcheng5468@gmail.com>"
 ENV NEO_VERSION=24.39.31294.12
 ENV GMMLIB_VERSION=22.5.2
 ENV IGC_VERSION=1.0.17791.9
 ENV LEVEL_ZERO_VERSION=1.6.31294.12
+ENV VNCOPTIONS="${VNCOPTIONS} -disableBasicAuth"
+ENV TZ=Asia/Shanghai
+
 USER root
 
 # 替换阿里云系统源
