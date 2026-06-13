@@ -1,6 +1,6 @@
-#FROM kasmweb/core-ubuntu-noble:1.17.0
-FROM kasmweb/core-ubuntu-resolute-wkde:develop
-
+# FROM kasmweb/core-ubuntu-noble:1.17.0
+# FROM kasmweb/core-ubuntu-resolute-wkde:develop
+FROM kasmweb/core-ubuntu-noble:1.19.0
 
 
 # LABEL version="1.0" maintainer="colinchang<zhangcheng5468@gmail.com>"
@@ -8,7 +8,7 @@ ENV NEO_VERSION=24.39.31294.12
 ENV GMMLIB_VERSION=22.5.2
 ENV IGC_VERSION=1.0.17791.9
 ENV LEVEL_ZERO_VERSION=1.6.31294.12
-ENV VNCOPTIONS="${VNCOPTIONS} -disableBasicAuth"
+ENV VNCOPTIONS="${VNCOPTIONS} -disableBasicAuth -DLP_Log off"
 ENV TZ=Asia/Shanghai
 ENV LANG=zh_CN.UTF-8
 ENV LANGUAGE=zh_CN:zh
