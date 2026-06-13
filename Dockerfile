@@ -16,7 +16,7 @@ ENV LANGUAGE=zh_CN:zh
 USER root
 
 # 替换阿里云系统源
-COPY $PWD/sources.list /etc/apt/sources.list
+# COPY $PWD/sources.list /etc/apt/sources.list
 # COPY $PWD/xunlei_1.0.0.1-myubuntu_amd64.deb /home/kasm-user
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 RUN apt update && mkdir -p /home/kasm-user/Desktop \
