@@ -1,5 +1,5 @@
 #FROM kasmweb/core-ubuntu-noble:1.17.0
-FROM kasmweb/core-ubuntu-noble:x86_64-develop
+FROM kasmweb/core-ubuntu-resolute-wkde:develop
 
 
 
@@ -10,12 +10,15 @@ ENV IGC_VERSION=1.0.17791.9
 ENV LEVEL_ZERO_VERSION=1.6.31294.12
 ENV VNCOPTIONS="${VNCOPTIONS} -disableBasicAuth"
 ENV TZ=Asia/Shanghai
+ENV LANG=zh_CN.UTF-8
+ENV LANGUAGE=zh_CN:zh
 
 USER root
 
 # 替换阿里云系统源
 COPY $PWD/sources.list /etc/apt/sources.list
 # COPY $PWD/xunlei_1.0.0.1-myubuntu_amd64.deb /home/kasm-user
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 RUN apt update && mkdir -p /home/kasm-user/Desktop \
 
 # Chrome
