@@ -1,28 +1,44 @@
-name: Bulild and Publish Docker Image
+name: Build and Publish Docker Image
 
 on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+  # 1. 代码推送触发
+  # push:
+  #   branches: [ "main" ]
+  # # 2. Pull Request 触发
+  # pull_request:
+  #   branches: [ "main" ]
+  
+  # 3. 每周一定时自动运行 (UTC 时间 00:00，相当于北京时间周一上午 08:00)
+  schedule:
+    - cron: "0 0 * * 1"
+
+  # 4. 手动点击按钮触发 (新增)
+  workflow_dispatch:
 
 jobs:
   build_and_publish:
     runs-on: ubuntu-latest
     steps:
       - name: Check out the repo
-        uses: actions/checkout@v3
-        
+        uses: actions/checkout@v4
+
+      # 必须：开启 Docker Buildx 以支持 --mount=type=cache 及高级缓存特性
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Log in to Docker Hub
-        uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-      
+
       - name: Build and Publish the Docker image
-        uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671
+        uses: docker/build-push-action@v5
         with:
           context: .
           file: ./Dockerfile
           push: true
           tags: 767939287/ubuntu-desktop:latest
+          # 配合 Dockerfile 缓存配置，进一步提升速度并控制体积
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
