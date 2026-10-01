@@ -1,0 +1,18 @@
+# ============================================================
+# 标准用户 crontab（等同于实体机上 `crontab -e` 的内容）
+# 会被安装到 /var/spool/cron/crontabs/kasm-user
+# ============================================================
+# 格式: 分 时 日 月 周  命令        （注意：没有“用户”字段）
+#
+# 环境变量（按需修改）：
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+TZ=Asia/Shanghai
+HOME=/home/kasm-user
+
+# 有头/无头由 py 脚本读取环境变量 HEADLESS 自行决定；
+# 需在有头模式下运行时，取消下面这行注释：
+#DISPLAY=:1
+# 每 10 分钟执行一次（示例，按需修改路径）
+*/10 * * * * /usr/bin/python3 /home/kasm-user/app.py >> /var/log/cron.log 2>&1
+
