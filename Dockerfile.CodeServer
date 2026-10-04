@@ -7,7 +7,10 @@ ENV DEBIAN_FRONTEND=noninteractive \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
     HOME=/root \
-    TZ=Asia/Shanghai
+    TZ=Asia/Shanghai \
+    PIP_BREAK_SYSTEM_PACKAGES=1 \
+    PIP_TARGET=/root/project/.pylibs \
+    PYTHONPATH=/root/project/.pylibs
 
 # OCI 元数据标签
 LABEL org.opencontainers.image.title="code-server" \
@@ -54,9 +57,58 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 RUN curl -fsSL https://code-server.dev/install.sh | sh -s -- --method=standalone \
     && rm -rf /tmp/* /var/tmp/*
 
-# 5. 创建配置目录（直接用 root，避免非 root 权限问题）
+# 4.1 安装 Python3（全局装库，配合 PIP_BREAK_SYSTEM_PACKAGES 绕过 PEP 668）
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    set -eux; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends \
+        python3 \
+        python3-pip \
+        python3-venv; \
+    # 建立 python -> python3 软链接，方便直接使用 python 命令
+    ln -sf /usr/bin/python3 /usr/local/bin/python; \
+    apt-get clean; \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# 4.2 使用 NodeSource 安装 Node.js 22 LTS（替换 Debian 仓库的旧版 Node）
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    set -eux; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends ca-certificates curl gnupg; \
+    # 导入 NodeSource 签名并添加 Node 22 源
+    mkdir -p /etc/apt/keyrings; \
+    curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key \
+        | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg; \
+    echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_22.x nodistro main" \
+        > /etc/apt/sources.list.d/nodesource.list; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends nodejs; \
+    # 清理配置用的 gnupg
+    apt-get purge -y --auto-remove gnupg; \
+    apt-get clean; \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# 5. 创建工作区与配置目录（直接用 root，避免非 root 权限问题）
 RUN mkdir -p /root/.config/code-server \
-    && mkdir -p /root/project
+    && mkdir -p /root/project \
+    && mkdir -p /root/project/.pylibs
+
+# 预初始化 git 工作区（默认分支 main，供 code-server 与 GitHub 联动）
+RUN git init -b main /root/project \
+    && git config --global --add safe.directory /root/project \
+    && git config --global init.defaultBranch main \
+    && git config --global pull.rebase false
+
+# 预置 .gitignore，避免把持久化的 Python 库目录误提交
+COPY <<EOF /root/project/.gitignore
+.pylibs/
+__pycache__/
+*.pyc
+node_modules/
+.venv/
+EOF
 
 # 使用 Dockerfile 原生 heredoc 写入 code-server 默认配置
 COPY <<EOF /root/.config/code-server/config.yaml
@@ -66,7 +118,10 @@ password: YourStrongPasswordHere
 cert: false
 EOF
 
+# 设置工作目录，启动后即为 /root/project（大家共用同一工作区）
+WORKDIR /root/project
+
 EXPOSE 8080
 
-# 6. 启动命令（root 身份运行）
+# 6. 启动命令（root 身份运行，打开 /root/project 工作区）
 CMD ["code-server", "--bind-addr", "0.0.0.0:8080", "/root/project"]
