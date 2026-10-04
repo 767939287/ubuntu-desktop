@@ -1,6 +1,9 @@
 # syntax=docker/dockerfile:1.7
-# 1. 使用 Debian 官方 stable-slim 镜像作为基础镜像（跟随当前 stable 分支）
-FROM debian:stable-slim
+# 1. 使用 code-server 官方镜像作为基础（已内置 code-server，无需自行安装）
+FROM codercom/code-server:latest
+
+# 以 root 安装工具与配置（官方镜像默认用户为 coder，这里切到 root 便于系统级安装）
+USER root
 
 # 设置环境变量，避免交互式弹窗
 ENV DEBIAN_FRONTEND=noninteractive \
@@ -14,15 +17,12 @@ ENV DEBIAN_FRONTEND=noninteractive \
 
 # OCI 元数据标签
 LABEL org.opencontainers.image.title="code-server" \
-      org.opencontainers.image.description="Debian-based code-server web IDE"
+      org.opencontainers.image.description="code-server web IDE (based on codercom/code-server)"
 
 # ------------------------------------------------------------------
-# 优化点①：使用 BuildKit 缓存挂载 + 合并所有 apt 操作为单层
-#   - apt 缓存不写入镜像层（--mount=type=cache），减小体积
-#   - 基础依赖与 gh 官方源在同一层完成，避免重复 apt-get update
+# 基础工具 + GitHub CLI（官方镜像基于 Ubuntu，使用其官方源）
+#   - 使用 BuildKit 缓存挂载，apt 缓存不写入镜像层
 #   - 安装完 gh 后移除仅用于配置源的 gnupg
-#   - 保留 wget 便于后续安装软件
-#   - 使用 Debian 官方源（stable），不做国内加速
 # ------------------------------------------------------------------
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
@@ -51,7 +51,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     # gnupg 仅用于配置源，安装完 gh 后移除，减小体积
     apt-get purge -y --auto-remove gnupg; \
     apt-get clean; \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+    rm -rf /var/lib/apt/lists/* /var/cache/apt/* /tmp/* /var/tmp/* /root/.cache/*
 
 # 4.1 安装 Python3（全局装库，配合 PIP_BREAK_SYSTEM_PACKAGES 绕过 PEP 668）
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
@@ -67,38 +67,8 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     apt-get clean; \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# 4.2 使用 NodeSource 安装 Node.js 22 LTS（替换 Debian 仓库的旧版 Node）
-RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
-    --mount=type=cache,target=/var/lib/apt,sharing=locked \
-    set -eux; \
-    apt-get update; \
-    apt-get install -y --no-install-recommends ca-certificates curl gnupg; \
-    # 导入 NodeSource 签名并添加 Node 22 源
-    mkdir -p /etc/apt/keyrings; \
-    curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key \
-        | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg; \
-    echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_22.x nodistro main" \
-        > /etc/apt/sources.list.d/nodesource.list; \
-    apt-get update; \
-    apt-get install -y --no-install-recommends nodejs; \
-    # 清理配置用的 gnupg
-    apt-get purge -y --auto-remove gnupg; \
-    apt-get clean; \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
-# 4.3 安装 code-server（standalone 方式，需在 Node 安装完成之后）
-#     - 安装后用 find 定位真实二进制，统一软链到 /usr/bin/code-server
-#     - 最后用 --version 校验，装不上则构建立即失败
-RUN set -eux; \
-    curl -fsSL https://code-server.dev/install.sh | sh -s -- --method=standalone; \
-    # 定位真实的可执行文件（避开软链自身）
-    BIN="$(find / -type f -name code-server -perm -u+x 2>/dev/null | grep -vE '/(proc|sys)/' | head -n1)"; \
-    echo "found code-server at: ${BIN}"; \
-    test -n "${BIN}"; \
-    ln -sf "${BIN}" /usr/bin/code-server; \
-    ln -sf "${BIN}" /usr/local/bin/code-server; \
-    code-server --version; \
-    rm -rf /tmp/* /var/tmp/*
+# 4.3 校验 Node 与 code-server 可用（官方镜像已内置，无需自行安装）
+RUN node --version && code-server --version
 
 # 5. 创建工作区与配置目录（直接用 root，避免非 root 权限问题）
 RUN mkdir -p /root/.config/code-server \
@@ -134,5 +104,4 @@ WORKDIR /root/project
 EXPOSE 8080
 
 # 6. 启动命令（root 身份运行，打开 /root/project 工作区）
-#    优先用 /usr/bin/code-server，若不存在则用 /usr/local/bin 软链
-CMD ["sh", "-c", "exec $(command -v code-server || echo /usr/local/bin/code-server) --bind-addr 0.0.0.0:8080 /root/project"]
+CMD ["code-server", "--bind-addr", "0.0.0.0:8080", "/root/project"]

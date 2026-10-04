@@ -46,7 +46,8 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # 3. 一次性构建并推送至两个仓库，标签固定为 Debian-CodeServer
+      # 3. 一次性构建并推送至两个仓库
+      #    - 固定标签 code-server（基于官方 codercom/code-server）
       #    - 加日期标签便于追踪每周构建产物
       - name: Set build date
         id: date
