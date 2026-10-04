@@ -6,9 +6,7 @@ FROM debian:stable-slim
 ENV DEBIAN_FRONTEND=noninteractive \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
-    PUID=1000 \
-    PGID=1000 \
-    HOME=/home/coder \
+    HOME=/root \
     TZ=Asia/Shanghai
 
 # OCI 元数据标签
@@ -37,7 +35,6 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
         git \
         jq \
         openssh-client \
-        sudo \
         build-essential \
         gnupg; \
     # 配置 GitHub CLI 官方 APT 源（复用上面的 apt 缓存）
@@ -57,20 +54,12 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 RUN curl -fsSL https://code-server.dev/install.sh | sh -s -- --method=standalone \
     && rm -rf /tmp/* /var/tmp/*
 
-# 5. 创建非 root 用户 (coder) 并赋予 sudo 权限
-RUN groupadd -g ${PGID} coder \
-    && useradd -u ${PUID} -g coder -m -s /bin/bash coder \
-    && echo "coder ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
-
-USER coder
-WORKDIR /home/coder
-
-# 6. 创建配置目录（mkdir 单独一层，便于缓存）
-RUN mkdir -p /home/coder/.config/code-server \
-    && mkdir -p /home/coder/project
+# 5. 创建配置目录（直接用 root，避免非 root 权限问题）
+RUN mkdir -p /root/.config/code-server \
+    && mkdir -p /root/project
 
 # 使用 Dockerfile 原生 heredoc 写入 code-server 默认配置
-COPY <<EOF /home/coder/.config/code-server/config.yaml
+COPY <<EOF /root/.config/code-server/config.yaml
 bind-addr: 0.0.0.0:8080
 auth: password
 password: YourStrongPasswordHere
@@ -79,5 +68,5 @@ EOF
 
 EXPOSE 8080
 
-# 8. 启动命令
-CMD ["code-server", "--bind-addr", "0.0.0.0:8080", "/home/coder/project"]
+# 6. 启动命令（root 身份运行）
+CMD ["code-server", "--bind-addr", "0.0.0.0:8080", "/root/project"]
