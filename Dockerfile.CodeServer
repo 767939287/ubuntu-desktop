@@ -65,10 +65,12 @@ RUN groupadd -g ${PGID} coder \
 USER coder
 WORKDIR /home/coder
 
-# 6. 创建配置文件目录与 code-server 默认配置（合并为单层）
+# 6. 创建配置目录（mkdir 单独一层，便于缓存）
 RUN mkdir -p /home/coder/.config/code-server \
-    && mkdir -p /home/coder/project \
-    && cat << 'EOF' > /home/coder/.config/code-server/config.yaml
+    && mkdir -p /home/coder/project
+
+# 使用 Dockerfile 原生 heredoc 写入 code-server 默认配置
+COPY <<EOF /home/coder/.config/code-server/config.yaml
 bind-addr: 0.0.0.0:8080
 auth: password
 password: YourStrongPasswordHere
