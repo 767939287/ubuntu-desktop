@@ -1,0 +1,81 @@
+# syntax=docker/dockerfile:1.7
+# 1. 使用 Debian 官方 stable-slim 镜像作为基础镜像（跟随当前 stable 分支）
+FROM debian:stable-slim
+
+# 设置环境变量，避免交互式弹窗
+ENV DEBIAN_FRONTEND=noninteractive \
+    LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    PUID=1000 \
+    PGID=1000 \
+    HOME=/home/coder \
+    TZ=Asia/Shanghai
+
+# OCI 元数据标签
+LABEL org.opencontainers.image.title="code-server" \
+      org.opencontainers.image.description="Debian-based code-server web IDE"
+
+# ------------------------------------------------------------------
+# 优化点①：使用 BuildKit 缓存挂载 + 合并所有 apt 操作为单层
+#   - apt 缓存不写入镜像层（--mount=type=cache），减小体积
+#   - 基础依赖与 gh 官方源在同一层完成，避免重复 apt-get update
+#   - 安装完 gh 后移除仅用于配置源的 gnupg
+#   - 保留 wget 便于后续安装软件
+#   - 使用 Debian 官方源（stable），不做国内加速
+# ------------------------------------------------------------------
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    set -eux; \
+    # 设定时区（沿用 Kasm 版一行写法，无需安装 tzdata）
+    ln -snf /usr/share/zoneinfo/$TZ /etc/localtime; \
+    echo $TZ > /etc/timezone; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends \
+        curl \
+        wget \
+        ca-certificates \
+        git \
+        jq \
+        openssh-client \
+        sudo \
+        build-essential \
+        gnupg; \
+    # 配置 GitHub CLI 官方 APT 源（复用上面的 apt 缓存）
+    curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
+        | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg; \
+    chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg; \
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" \
+        > /etc/apt/sources.list.d/github-cli.list; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends gh; \
+    # gnupg 仅用于配置源，安装完 gh 后移除，减小体积
+    apt-get purge -y --auto-remove gnupg; \
+    apt-get clean; \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# 4. 安装 code-server（standalone 方式，避免重复安装系统依赖）
+RUN curl -fsSL https://code-server.dev/install.sh | sh -s -- --method=standalone \
+    && rm -rf /tmp/* /var/tmp/*
+
+# 5. 创建非 root 用户 (coder) 并赋予 sudo 权限
+RUN groupadd -g ${PGID} coder \
+    && useradd -u ${PUID} -g coder -m -s /bin/bash coder \
+    && echo "coder ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+
+USER coder
+WORKDIR /home/coder
+
+# 6. 创建配置文件目录与 code-server 默认配置（合并为单层）
+RUN mkdir -p /home/coder/.config/code-server \
+    && mkdir -p /home/coder/project \
+    && cat << 'EOF' > /home/coder/.config/code-server/config.yaml
+bind-addr: 0.0.0.0:8080
+auth: password
+password: YourStrongPasswordHere
+cert: false
+EOF
+
+EXPOSE 8080
+
+# 8. 启动命令
+CMD ["code-server", "--bind-addr", "0.0.0.0:8080", "/home/coder/project"]
