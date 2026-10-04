@@ -53,10 +53,6 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     apt-get clean; \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# 4. 安装 code-server（standalone 方式，避免重复安装系统依赖）
-RUN curl -fsSL https://code-server.dev/install.sh | sh -s -- --method=standalone \
-    && rm -rf /tmp/* /var/tmp/*
-
 # 4.1 安装 Python3（全局装库，配合 PIP_BREAK_SYSTEM_PACKAGES 绕过 PEP 668）
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
@@ -89,6 +85,18 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     apt-get purge -y --auto-remove gnupg; \
     apt-get clean; \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# 4.3 安装 code-server（standalone 方式，需在 Node 安装完成之后）
+#     - 安装到 /usr/lib/code-server，并显式软链到 /usr/local/bin
+#     - 启动前做一次 --version 校验，确保可执行文件确实可用
+RUN set -eux; \
+    curl -fsSL https://code-server.dev/install.sh | sh -s -- --method=standalone; \
+    # 兜底：确保 PATH 中有 code-server（standalone 安装于 /usr/lib/code-server/bin）
+    if [ ! -x /usr/bin/code-server ] && [ ! -x /usr/local/bin/code-server ]; then \
+        ln -sf /usr/lib/code-server/bin/code-server /usr/local/bin/code-server; \
+    fi; \
+    code-server --version; \
+    rm -rf /tmp/* /var/tmp/*
 
 # 5. 创建工作区与配置目录（直接用 root，避免非 root 权限问题）
 RUN mkdir -p /root/.config/code-server \
@@ -124,4 +132,5 @@ WORKDIR /root/project
 EXPOSE 8080
 
 # 6. 启动命令（root 身份运行，打开 /root/project 工作区）
-CMD ["code-server", "--bind-addr", "0.0.0.0:8080", "/root/project"]
+#    优先用 /usr/bin/code-server，若不存在则用 /usr/local/bin 软链
+CMD ["sh", "-c", "exec $(command -v code-server || echo /usr/local/bin/code-server) --bind-addr 0.0.0.0:8080 /root/project"]
