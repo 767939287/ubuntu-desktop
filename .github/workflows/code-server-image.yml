@@ -59,10 +59,10 @@ jobs:
           file: ./Dockerfile.CodeServer
           push: true
           tags: |
-            767939287/code-server:Debian-CodeServer
-            767939287/code-server:Debian-CodeServer-${{ steps.date.outputs.date }}
-            ghcr.io/${{ github.repository_owner }}/code-server:Debian-CodeServer
-            ghcr.io/${{ github.repository_owner }}/code-server:Debian-CodeServer-${{ steps.date.outputs.date }}
+            767939287/code-server:latest
+            767939287/code-server:${{ steps.date.outputs.date }}
+            ghcr.io/${{ github.repository_owner }}/code-server:latest
+            ghcr.io/${{ github.repository_owner }}/code-server:${{ steps.date.outputs.date }}
           # 启用 GitHub Actions 缓存加速
           cache-from: type=gha
           cache-to: type=gha,mode=max
