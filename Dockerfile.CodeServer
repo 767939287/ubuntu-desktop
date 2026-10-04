@@ -87,14 +87,16 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # 4.3 安装 code-server（standalone 方式，需在 Node 安装完成之后）
-#     - 安装到 /usr/lib/code-server，并显式软链到 /usr/local/bin
-#     - 启动前做一次 --version 校验，确保可执行文件确实可用
+#     - 安装后用 find 定位真实二进制，统一软链到 /usr/bin/code-server
+#     - 最后用 --version 校验，装不上则构建立即失败
 RUN set -eux; \
     curl -fsSL https://code-server.dev/install.sh | sh -s -- --method=standalone; \
-    # 兜底：确保 PATH 中有 code-server（standalone 安装于 /usr/lib/code-server/bin）
-    if [ ! -x /usr/bin/code-server ] && [ ! -x /usr/local/bin/code-server ]; then \
-        ln -sf /usr/lib/code-server/bin/code-server /usr/local/bin/code-server; \
-    fi; \
+    # 定位真实的可执行文件（避开软链自身）
+    BIN="$(find / -type f -name code-server -perm -u+x 2>/dev/null | grep -vE '/(proc|sys)/' | head -n1)"; \
+    echo "found code-server at: ${BIN}"; \
+    test -n "${BIN}"; \
+    ln -sf "${BIN}" /usr/bin/code-server; \
+    ln -sf "${BIN}" /usr/local/bin/code-server; \
     code-server --version; \
     rm -rf /tmp/* /var/tmp/*
 
