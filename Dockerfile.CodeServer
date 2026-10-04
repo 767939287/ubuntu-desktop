@@ -67,9 +67,6 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     apt-get clean; \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# 4.3 校验 Node 与 code-server 可用（官方镜像已内置，无需自行安装）
-RUN node --version && code-server --version
-
 # 5. 创建工作区与配置目录（直接用 root，避免非 root 权限问题）
 RUN mkdir -p /root/.config/code-server \
     && mkdir -p /root/project \
