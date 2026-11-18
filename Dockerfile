@@ -22,10 +22,10 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     && ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone \
     && mkdir -p /home/kasm-user/Desktop \
     && cd /tmp \
-    && apt-get update \
+    && apt-get -o Acquire::Retries=5 update \
 
 # Chrome 及系统依赖库 (保留 curl, jq 以及补充 ca-certificates)
-    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends --no-install-suggests \
+    && DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::Retries=5 install -y --no-install-recommends --no-install-suggests \
         pip iproute2 openssl ca-certificates locales fonts-noto-cjk fonts-noto-cjk-extra xdg-utils fonts-liberation libu2f-udev smbclient cifs-utils wget curl jq cron \
         python3 python3-pip \
         libxcb-cursor0 \
@@ -43,16 +43,20 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
         requests \
 
 # 下载 Chrome 150
-    && wget -q https://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-stable/google-chrome-stable_150.0.7871.46-1_amd64.deb -O google-chrome-stable_150_amd64.deb \
+    && wget -q --tries=3 --timeout=60 --waitretry=5 https://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-stable/google-chrome-stable_150.0.7871.46-1_amd64.deb -O google-chrome-stable_150_amd64.deb \
 
-# 动态获取最新 Intel 显卡驱动
-    && curl -s https://api.github.com/repos/intel/compute-runtime/releases/latest \
-        | jq -r '.assets[].browser_download_url' | grep '\.deb$' | xargs -n 1 wget -q \
-    && curl -s https://api.github.com/repos/intel/intel-graphics-compiler/releases/latest \
-        | jq -r '.assets[].browser_download_url' | grep '\.deb$' | xargs -n 1 wget -q \
+# 动态获取最新 Intel 显卡驱动（API 限流/网络抖动时重试，并校验结果非空）
+    && curl -fsSL --retry 3 --retry-delay 3 https://api.github.com/repos/intel/compute-runtime/releases/latest \
+        | jq -r '.assets[].browser_download_url' | grep '\.deb$' > /tmp/cr-debs.txt \
+    && test -s /tmp/cr-debs.txt \
+    && xargs -r -n 1 wget -q --tries=3 --timeout=60 < /tmp/cr-debs.txt \
+    && curl -fsSL --retry 3 --retry-delay 3 https://api.github.com/repos/intel/intel-graphics-compiler/releases/latest \
+        | jq -r '.assets[].browser_download_url' | grep '\.deb$' > /tmp/igc-debs.txt \
+    && test -s /tmp/igc-debs.txt \
+    && xargs -r -n 1 wget -q --tries=3 --timeout=60 < /tmp/igc-debs.txt \
 
 # 安装所有 deb 包
-    && apt-get install --no-install-recommends --no-install-suggests -y ./*.deb \
+    && apt-get -o Acquire::Retries=5 install --no-install-recommends --no-install-suggests -y ./*.deb \
 
 # 配置 Chrome 启动参数 (禁用沙箱与 GPU 沙箱)
     && sed -i 's/Exec=\/usr\/bin\/google-chrome-stable/Exec=\/usr\/bin\/google-chrome-stable --no-sandbox --disable-dev-shm-usage/g' /usr/share/applications/google-chrome.desktop \

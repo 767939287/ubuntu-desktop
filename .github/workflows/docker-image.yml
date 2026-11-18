@@ -48,7 +48,11 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       # 3. 一次性构建并推送至两个仓库
+      #    continue-on-error: 允许下面的重试步骤兜底（GHCR 偶发
+      #    "failed to fetch oauth token: denied: denied"）
       - name: Build and Publish the Docker image
+        id: build
+        continue-on-error: true
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -59,5 +63,21 @@ jobs:
             767939287/ubuntu-desktop:latest
             ghcr.io/${{ github.repository_owner }}/ubuntu-desktop:latest
           # 启用 GitHub Actions 缓存加速
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # 4. 首次推送失败时重试一次：registry 认证失败多为瞬时问题，
+      #    重新执行会重新申请 oauth token；有 gha 缓存，重试成本很低
+      - name: Retry build and publish
+        id: build_retry
+        if: steps.build.outcome == 'failure'
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: |
+            767939287/ubuntu-desktop:latest
+            ghcr.io/${{ github.repository_owner }}/ubuntu-desktop:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max

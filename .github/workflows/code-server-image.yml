@@ -54,6 +54,8 @@ jobs:
         run: echo "date=$(date -u +'%Y%m%d')" >> "$GITHUB_OUTPUT"
 
       - name: Build and Publish the CodeServer image
+        id: build
+        continue-on-error: true
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -65,5 +67,22 @@ jobs:
             ghcr.io/${{ github.repository_owner }}/code-server:latest
             ghcr.io/${{ github.repository_owner }}/code-server:${{ steps.date.outputs.date }}
           # 启用 GitHub Actions 缓存加速
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # 首次推送失败时重试一次（GHCR 偶发 "failed to fetch oauth token: denied"）
+      - name: Retry build and publish
+        id: build_retry
+        if: steps.build.outcome == 'failure'
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile.CodeServer
+          push: true
+          tags: |
+            767939287/code-server:latest
+            767939287/code-server:${{ steps.date.outputs.date }}
+            ghcr.io/${{ github.repository_owner }}/code-server:latest
+            ghcr.io/${{ github.repository_owner }}/code-server:${{ steps.date.outputs.date }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
